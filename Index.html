@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>酒店生存大百科 ✨</title>
+    <style>
+        /* --- 基礎配色 (可愛賽博龐克) --- */
+        :root {
+            --bg-color: #120b29; /* 深夜紫藍 */
+            --card-bg: rgba(35, 25, 75, 0.7); /* 半透明卡片 */
+            --neon-pink: #ff4da6;
+            --neon-blue: #00f0ff;
+            --text-main: #ffffff;
+            --text-sub: #c8c2f2;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Microsoft JhengHei';
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            transition: background-color 0.5s ease;
+        }
+
+        /* --- 動態發光泡泡背景 --- */
+        .bubble-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+            transition: opacity 0.5s ease;
+        }
+        .bubble {
+            position: absolute;
+            bottom: -50px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), rgba(0, 240, 255, 0.2));
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+            animation: rise infinite ease-in;
+        }
+        .bubble.pink {
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), rgba(255, 77, 166, 0.2));
+            box-shadow: 0 0 15px rgba(255, 77, 166, 0.4);
+        }
+        @keyframes rise {
+            0% { transform: translateY(0) scale(1); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-110vh) scale(1.2); opacity: 0; }
+        }
+
+        /* --- 🚨 危機模式 (Danger Zone) 特效 --- */
+        body.danger-zone {
+            background-color: #240000; /* 暗紅色背景 */
+        }
+        body.danger-zone .bubble-bg {
+            opacity: 0; /* 隱藏原本的可愛泡泡 */
+        }
+        .danger-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0;
+            /* 紅色大叉叉背景圖 */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Ctext x='15' y='50' font-size='30' fill='rgba(255, 0, 0, 0.15)'%3E❌%3C/text%3E%3C/svg%3E");
+            transition: opacity 0.5s ease;
+        }
+        body.danger-zone .danger-bg {
+            opacity: 1;
+            animation: danger-flash 1.5s infinite alternate;
+        }
+        @keyframes danger-flash {
+            0% { box-shadow: inset 0 0 50px rgba(255, 0, 0, 0.2); }
+            100% { box-shadow: inset 0 0 150px rgba(255, 0, 0, 0.7); }
+        }
+
+        /* --- 頁面佈局 --- */
+        .app-container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+            flex-grow: 1;
+        }
+
+        .main-title {
+            text-align: center;
+            font-size: 2rem;
+            color: #fff;
+            text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink);
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            transition: text-shadow 0.3s;
+        }
+        body.danger-zone .main-title {
+            text-shadow: 0 0 10px #ff0000, 0 0 30px #ff0000;
+        }
+
+        /* --- 導覽列 (分頁標籤) --- */
+        .nav-menu {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 20px;
+            border: 1px solid var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+            transition: all 0.5s;
+        }
+        body.danger-zone .nav-menu {
+            border-color: #ff0000;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+        }
+        .nav-btn {
+            background: transparent;
+            border: 2px solid transparent;
+            color: var(--text-sub);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .nav-btn.active {
+            background: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 10px var(--neon-blue);
+        }
+        .nav-btn:hover:not(.active) {
+            border-color: var(--neon-pink);
+            color: #fff;
+        }
+
+        /* 特殊警告按鈕 */
+        .btn-danger {
+            color: #ff4d4d;
+            border-color: #ff4d4d;
+            animation: pulse-border 2s infinite;
+        }
+        .btn-danger.active {
+            background: #ff0000 !important;
+            color: #fff !important;
+            box-shadow: 0 0 15px #ff0000 !important;
+            border-color: #ff0000 !important;
+            animation: none;
+        }
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 77, 77, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); }
+        }
+
+        /* --- 內容區塊 --- */
+        .page-content {
+            display: none;
+            animation: slideUp 0.4s ease forwards;
+        }
+        .page-content.active {
+            display: block;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- 展開式卡片 (Accordion) --- */
+        .term-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(8px);
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .term-card.open {
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 15px rgba(255, 77, 166, 0.3);
+        }
+        .term-header {
+            padding: 18px 20px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--neon-blue);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .term-header::after {
+            content: '＋';
+            color: var(--neon-pink);
+            font-size: 1.5rem;
+            transition: transform 0.3s;
+        }
+        .term-card.open .term-header::after {
+            transform: rotate(45deg);
+        }
+        .term-body {
+            max-height: 0;
+            overflow: hidden;
+            padding: 0 20px;
+            color: var(--text-main);
+            line-height: 1.7;
+            transition: max-height 0.4s ease;
+        }
+        .term-card.open .term-body {
+            max-height: 800px;
+            padding-bottom: 20px;
+        }
+
+        /* 🚨 專屬警告大卡片 (不需展開，直接顯示) */
+        .alert-card {
+            background: rgba(20, 0, 0, 0.8);
+            border: 2px solid #ff0000;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+            line-height: 1.8;
+            font-size: 1.1rem;
+        }
+        .alert-title {
+            color: #ff4d4d;
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #ff0000;
+        }
+        .alert-highlight {
+            color: #ffff00;
+            font-weight: bold;
+            background: rgba(255, 0, 0, 0.3);
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        .highlight {
+            color: var(--neon-blue);
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(0, 240, 255, 0.5);
+        }
+
+        /* --- 刮刮樂互動區塊 --- */
+        .scratch-container {
+            position: relative;
+            margin-top: 15px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: rgba(0,0,0,0.4);
+            border: 1px dashed var(--neon-pink);
+        }
+        .scratch-text {
+            padding: 15px;
+            font-size: 0.95rem;
+            color: #fff;
+        }
+        .scratch-mask {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(45deg, var(--neon-pink), var(--neon-pink) 10px, #cc1177 10px, #cc1177 20px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: opacity 0.6s ease, transform 0.6s ease;
+            z-index: 10;
+        }
+        .scratch-container.revealed .scratch-mask {
+            opacity: 0;
+            transform: scale(1.1);
+            pointer-events: none;
+        }
+
+        /* --- 底部廣告 --- */
+        .footer-promo {
+            background: rgba(0, 0, 0, 0.7);
+            border-top: 2px solid var(--neon-blue);
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            line-height: 1.8;
+            font-size: 0.95rem;
+        }
+        body.danger-zone .footer-promo {
+            border-color: #ff0000;
+        }
+        .footer-promo a {
+            color: var(--neon-pink);
+            font-weight: bold;
+            text-decoration: none;
+            word-break: break-all;
+        }
+        .footer-promo a:hover {
+            color: var(--neon-blue);
+            text-shadow: 0 0 8px var(--neon-blue);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bubble-bg" id="bubble-bg"></div>
+    <div class="danger-bg"></div>
+
+    <div class="app-container">
+        <h1 class="main-title">✨ 酒店生存大百科</h1>
+
+        <div class="nav-menu">
+            <button class="nav-btn active" onclick="switchPage('page1', this)">💰 薪資排班</button>
+            <button class="nav-btn" onclick="switchPage('page2', this)">🏢 店家類型</button>
+            <button class="nav-btn" onclick="switchPage('page3', this)">👤 人員職稱</button>
+            <button class="nav-btn" onclick="switchPage('page4', this)">🛋️ 坐檯包廂</button>
+            <button class="nav-btn" onclick="switchPage('page5', this)">⏰ 點檯框檯</button>
+            <button class="nav-btn" onclick="switchPage('page6', this)">📝 其他</button>
+            <button class="nav-btn btn-danger" onclick="switchPage('page-danger', this)">🚨 絕對拒簽</button>
+        </div>
+
+        <div id="page1" class="page-content active">
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">一節 / 節薪 / 打卡 / 報班</div>
+                <div class="term-body">
+                    <p>● <span class="highlight">一節：</span>台北的酒店，都是以 10 分鐘為一個單位喔。</p>
+                    <p>● <span class="highlight">節薪：</span>每一節給的薪水。便服店或禮服店的薪水通常落在 240 到 290 元之間。</p>
+                    <p>● <span class="highlight">打卡：</span>上班時會給你一張卡片，放入打卡機成功打卡後，再交給「控台」。</p>
+                    <p>● <span class="highlight">報班：</span>專屬的「帶台」會在妳上班時詢問下禮拜有哪幾天可以上班。只要報確定能上班的那幾天就好了，如果突然有多餘的時間可以上班，可以等下禮拜再報加班。</p>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">薪水看天數</div>
+                <div class="term-body">
+                    <p>指薪水按上班天數調漲。例如經紀跟妳說，上三天班節薪是 230、四天班是 240、五天班是 250。</p>
+                    <div class="scratch-container" onclick="scratchOff(event, this)">
+                        <div class="scratch-mask">✨ 點擊刮開：學姐防雷建議 ✨</div>
+                        <div class="scratch-text">
+                            💡 我強烈建議要先問清楚：假如上了五天班，但其中有一天是 0 節，這樣算五天還是四天？有些經紀態度比較硬，只會算給妳四天班的薪水。為了避免大家不愉快，這些細節提前問清楚最好。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">薪水直走</div>
+                <div class="term-body">
+                    <p>不管上幾天班，妳的薪水（節薪）都是固定的。</p>
+                    <div class="scratch-container" onclick="scratchOff(event, this)">
+                        <div class="scratch-mask">✨ 點擊刮開：經驗談 ✨</div>
+                        <div class="scratch-text">
+                            👤 我自己本身就是直走，而且薪水不低，不會因為直走就變得比較低喔！如果能找到願意給直走，並且很正派的經紀，我會建議妳優先考慮。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">現領</div>
+                <div class="term-body">
+                    <p>當天上班、當天下班就領薪水，或是隔天匯款，不會拖太久。</p>
+                    <div class="scratch-container" onclick="scratchOff(event, this)">
+                        <div class="scratch-mask">✨ 點擊刮開：現領隱藏陷阱 ✨</div>
+                        <div class="scratch-text">
+                            ⚠️ 要搞清楚經紀是提供「永久現領」，還是僅限「試上期間現領」。另外有些經紀現領會扣妹妹的節薪（例如 240 降到 200），我會建議大家都去找現領不扣節薪的。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">上卡 / 下卡 / 休檔</div>
+                <div class="term-body">
+                    <p>● <span class="highlight">上卡：</span>來這家店上班，面試通過、取好名字並填好資料。</p>
+                    <p>● <span class="highlight">下卡：</span>就是在這家店離職的意思。</p>
+                    <p>● <span class="highlight">休檔：</span>休息一陣子不上班，但沒有離職。</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="page2" class="page-content">
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">制服店</div>
+                <div class="term-body">
+                    <p>主打性感、尺度較大，提供「秀舞」服務（即「上空」或「脫衣表演」）以及「手工」。</p>
+                    <div class="scratch-container" onclick="scratchOff(event, this)">
+                        <div class="scratch-mask">✨ 點擊刮開：良心建議 ✨</div>
+                        <div class="scratch-text">
+                            💡 除非條件真的很差，又極度想賺錢，且能接受這種尺度的人，不然我一般不建議新人去制服店。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">禮服店</div>
+                <div class="term-body">
+                    <p>商務會館，穿著正式小禮服，強調氣質談吐。服務包含聊天、喝酒、唱歌，互動尺度中等。</p>
+                    <div class="scratch-container" onclick="scratchOff(event, this)">
+                        <div class="scratch-mask">✨ 點擊刮開：新手村推薦 ✨</div>
+                        <div class="scratch-text">
+                            💡 我會建議新人先去禮服店磨練一個月，等有工作經驗了，如果長相條件確實可以，再去框店面試。比較不建議毫無經驗就直接衝框店。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">小框店 / 便服店</div>
+                <div class="term-body">
+                    <p>對素質要求很高，不由客人排排站挑選，而是由幹部帶入包廂。因為消費高，框的機率會比較高，所以叫做小框店。</p>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">大框店 / 便服店</div>
+                <div class="term-body">
+                    <p>酒店業界頂端。進場客人經濟實力極強。核心制度在於「全場買斷」（即大框），客人一旦中意通常會直接框到底。</p>
+                    <div class="scratch-container" onclick="scratchOff(event, this)">
+                        <div class="scratch-mask">✨ 點擊刮開：業界冷知識 ✨</div>
+                        <div class="scratch-text">
+                            * 有些框店又被稱作「炮店」，指接任務的公關居多。沒接任務且長相普普可能上不好；但如果妳長得美若天仙，不管去哪裡不接任務都可以上得很好。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">八大按摩 / 舒壓店</div>
+                <div class="term-body">
+                    <p>提供全身油壓按摩，重點在後續「加值服務」，需上空但不用喝酒。這幾年因為不用喝酒吸引較多人加入，整體素質慢慢提升，條件太差也不一定能上了。</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="page3" class="page-content">
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">行政 / 帶台</div>
+                <div class="term-body">
+                    <p>● <span class="highlight">行政：</span>負責排妹、帶妹妹進入包廂看台的人。</p>
+                    <p>● <span class="highlight">帶台：</span>專門負責妳的行政。處理報班、上下班，累了醉了直接跟他說。</p>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">幹部 / 控台</div>
+                <div class="term-body">
+                    <p>● <span class="highlight">幹部：</span>帶客人來消費的人。對幹部有禮貌，他們才會推薦優質客人給妳喔！</p>
+                    <p>● <span class="highlight">控台：</span>負責打卡與調度。下台後去找控台。若廣播聽到「空台看台」，代表有新包廂需要選公關了，要立刻前往。</p>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">少爺 / 公主</div>
+                <div class="term-body">
+                    <p>負責掃地、換毛巾冰塊、點餐、換麥克風電池等雜事。</p>
+                    <div class="scratch-container" onclick="scratchOff(event, this)">
+                        <div class="scratch-mask">✨ 點擊刮開：做人處事提醒 ✨</div>
+                        <div class="scratch-text">
+                            ⚠️ 他們工作非常辛苦，所以就算我們喝了酒，也務必要記得對他們態度好一點，記得跟他們說謝謝。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">明配 / 暗配</div>
+                <div class="term-body">
+                    <p>● <span class="highlight">明配：</span>不管是什麼客人基本上都會接任務的公關。</p>
+                    <p>● <span class="highlight">暗配：</span>會看跟客人相處下來的感覺，再決定要不要接任務的公關。</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="page4" class="page-content">
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">上台 / 空台 / 看台 / 順位</div>
+                <div class="term-body">
+                    <p>● <span class="highlight">上台：</span>被客人選中坐在包廂裡。</p>
+                    <p>● <span class="highlight">空台：</span>沒被選中。空台時沒薪水。</p>
+                    <p>● <span class="highlight">看台：</span>進包廂給客人挑的過程。</p>
+                    <p>● <span class="highlight">順位：</span>看包廂順序，<span class="highlight">絕對不可以跳號</span>！</p>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">下台 / 咖掉 / 自卡</div>
+                <div class="term-body">
+                    <p>● <span class="highlight">下台：</span>客人離開後去找控台報下桌。</p>
+                    <p>● <span class="highlight">先休息 / 咖掉：</span>頻率不合請妳離開，離開後務必回報行政/控台。</p>
+                    <p>● <span class="highlight">自卡：</span>客人太色或喝太多，委婉撒嬌仍無法應付時，去廁所傳訊息給行政求救帶妳離開。</p>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">完敗 / 灣掰</div>
+                <div class="term-body">
+                    <p>包廂只有一位客人，且客人只點了一位小姐（One by one）。</p>
+                    <div class="scratch-container" onclick="scratchOff(event, this)">
+                        <div class="scratch-mask">✨ 點擊刮開：自保求生守則 ✨</div>
+                        <div class="scratch-text">
+                            💡 妳可以選擇上班前先講清楚不坐灣掰桌；若坐下才發現，可按鈴請少爺進來換東西，或經同意叫行政排妹。人員進出能增加保障，減少獨處時間。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">預三節 / 要續嗎 / 不續</div>
+                <div class="term-body">
+                    <p>坐滿 3 節（約 30 分鐘）時，行政會進來問客人「要續嗎？」。</p>
+                    <p>● <span class="highlight">不預：</span>滿意，不用再問了。<br>● <span class="highlight">再預三：</span>再觀察 30 分鐘。</p>
+                    <div class="scratch-container" onclick="scratchOff(event, this)">
+                        <div class="scratch-mask">✨ 點擊刮開：留客小技巧 ✨</div>
+                        <div class="scratch-text">
+                            💡 「不續」就是請妳離開。千萬別在客人還沒回答時就拿包包作勢要走。可以適當撒嬌求留，成功的話親親他臉頰說：謝謝哥哥。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">滿包 / 塞包 / 佔包</div>
+                <div class="term-body">
+                    <p>生意好沒空包廂時，客人會請行政排妹妹先進去坐著「佔包」。</p>
+                    <div class="scratch-container" onclick="scratchOff(event, this)">
+                        <div class="scratch-mask">✨ 點擊刮開：黃金十分鐘 ✨</div>
+                        <div class="scratch-text">
+                            ⚠️ 當客人進來時要趕快站起身迎接討歡心！因為 10 分鐘後行政就會進來問要不要留下來，這時間非常重要！
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">遞衛生紙</div>
+                <div class="term-body">
+                    <p>客人去上廁所時，趕快拿三張衛生紙折好，站在廁所門口等他出來遞給他。</p>
+                    <p>⚠️ 千萬不要呆坐在沙發上，不然客人的朋友很容易覺得妳在發呆。</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="page5" class="page-content">
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">點台 / 加點</div>
+                <div class="term-body">
+                    <p>● <span class="highlight">點台：</span>後桌指名要找妳。</p>
+                    <p>● <span class="highlight">加點：</span>前桌客人決定留下妳。</p>
+                    <div class="scratch-container" onclick="scratchOff(event, this)">
+                        <div class="scratch-mask">✨ 點擊刮開：高情商撒嬌術 ✨</div>
+                        <div class="scratch-text">
+                            💡 後桌點台時，請妳勾緊前桌客人的手臂，淚眼汪汪看向他，撒嬌說妳想留下來。不管點台或加點客人都有額外付錢，記得敬酒說謝謝！
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">小框 / 大框 / 到底 / 內全</div>
+                <div class="term-body">
+                    <p>● <span class="highlight">小框：</span>通常保底 4 小時。</p>
+                    <p>● <span class="highlight">大框：</span>通常跑 8 小時。</p>
+                    <p>● <span class="highlight">到底：</span>買到店家結束營業時間。</p>
+                    <p>● <span class="highlight">內全：</span>保 10 小時，需陪到幾點問帶台。</p>
+                    <div class="scratch-container" onclick="scratchOff(event, this)">
+                        <div class="scratch-mask">✨ 點擊刮開：前桌不留的漂亮轉身 ✨</div>
+                        <div class="scratch-text">
+                            💡 若後桌小框，前桌不留，請敬一杯酒說：「謝謝哥哥今天照顧我，希望下次還有機會見到您。」留個好印象，下次他可能就會來找妳！
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">外全 / 放生</div>
+                <div class="term-body">
+                    <p>● <span class="highlight">外全：</span>保 10 小時，不用進店打卡，直接外面碰面。</p>
+                    <p>● <span class="highlight">放生：</span>時間沒結束，但客人提早離開了。</p>
+                    <div class="scratch-container" onclick="scratchOff(event, this)">
+                        <div class="scratch-mask">✨ 點擊刮開：絕對不能忘的事 ✨</div>
+                        <div class="scratch-text">
+                            ⚠️ 外全一定要跟店家回報見面地點與時間，沒回報會罰錢！放生也務必要回報店家跟幹部確認，這步非常重要！
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">看點 / 訪台 / 定框</div>
+                <div class="term-body">
+                    <p>● <span class="highlight">看點：</span>幹部覺得妳適合，優先帶妳進包廂。記得大方自信說謝謝。</p>
+                    <p>● <span class="highlight">訪台 / 秀台：</span>後桌想看看妳長什麼樣子，訪台待 10 分鐘，秀台 30 秒。</p>
+                    <p>● <span class="highlight">定框：</span>前桌不想讓妳去訪台，必須喊「到底」起跳留人。</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="page6" class="page-content">
+            <div class="term-card" onclick="toggleCard(this)">
+                <div class="term-header">怎麼使用酒店的遙控器點歌</div>
+                <div class="term-body">
+                    <p style="color:var(--neon-pink); font-size:1.2rem; font-weight:bold;">
+                        我…晚…點…做圖…🫠
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-danger" class="page-content">
+            <div class="alert-card">
+                <div class="alert-title">❌ 絕對不要被騙簽合約 ❌</div>
+                <p>這點<span class="alert-highlight">非常、非常、非常重要</span>！絕對不要被騙簽下任何經紀合約！</p>
+                <p>很多人知道不能簽，但防不勝防！有些惡劣的經紀會把<span class="alert-highlight">「經紀合約」</span>夾帶在店家的<span class="alert-highlight">「入職人事資料」</span>裡面叫妳簽！他們會哄騙妳說：「這只是店家的基本資料啦～」</p>
+                <p>（店家確實會有入職人事資料，但<span class="alert-highlight">絕對不會</span>綁定妳跟經紀的去留！）</p>
+                <p>一旦妳不小心簽了，如果經紀對妳不好、放生妳，妳想要換經紀，就必須付<span class="alert-highlight">至少 $50,000 的違約金</span>才能走人！</p>
+                <p>👉 <span style="color:#00f0ff; font-weight:bold;">自保守則：</span>簽任何字之前，每一個字都要看清楚！只要看到<span class="alert-highlight">「違約金」</span>、<span class="alert-highlight">「經紀約」</span>、<span class="alert-highlight">「專屬」</span>，手上的筆就給我立刻放下！</p>
+            </div>
+        </div>
+
+    </div>
+
+    <footer class="footer-promo">
+        <p>by thread 狂抽客人嫩腚 soednfg</p>
+        <p>上班問題 抽脂 上海醫美 猛健樂心得 坐台方法 正場荷官培訓荷官職缺都可以找我<br>我以後開美睫店你們要來捧場噢 o(^▽^)o</p>
+        <p>連結：<br>
+            <a href="https://www.threads.com/@soednfg?igshid=NTc4MTIwNjQ2YQ==" target="_blank">
+                https://www.threads.com/@soednfg?igshid=NTc4MTIwNjQ2YQ==
+            </a>
+        </p>
+    </footer>
+
+    <script>
+        // 1. 生成動態泡泡
+        const bg = document.getElementById('bubble-bg');
+        for (let i = 0; i < 20; i++) {
+            let b = document.createElement('div');
+            b.classList.add('bubble');
+            if (Math.random() > 0.5) b.classList.add('pink');
+            
+            let size = Math.random() * 30 + 10;
+            b.style.width = size + 'px';
+            b.style.height = size + 'px';
+            b.style.left = Math.random() * 100 + 'vw';
+            b.style.animationDuration = (Math.random() * 8 + 6) + 's';
+            b.style.animationDelay = (Math.random() * 5) + 's';
+            bg.appendChild(b);
+        }
+
+        // 2. 分頁切換功能 (包含危機模式切換)
+        function switchPage(pageId, btn) {
+            // 隱藏所有頁面
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+            // 取消所有按鈕反白
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            
+            // 顯示選擇的頁面與按鈕
+            document.getElementById(pageId).classList.add('active');
+            btn.classList.add('active');
+
+            // 判斷是否觸發「危機模式」
+            if (pageId === 'page-danger') {
+                document.body.classList.add('danger-zone');
+            } else {
+                document.body.classList.remove('danger-zone');
+            }
+        }
+
+        // 3. 卡片展開/收合
+        function toggleCard(card) {
+            if(event.target.closest('.scratch-container')) return;
+            card.classList.toggle('open');
+        }
+
+        // 4. 刮刮樂解鎖功能
+        function scratchOff(event, container) {
+            container.classList.add('revealed');
+        }
+    </script>
+</body>
+</html>
